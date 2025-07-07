@@ -1,0 +1,134 @@
+.sidenav {
+  background: #669de0;
+  transition: width 0.5s ease;
+  position: absolute;
+  z-index: 1;
+  top: 0;
+  width: 20rem;
+  height: 120vh;
+  box-shadow: 0.063rem 0 1.25rem 0 #6798f3;
+  overflow-x: hidden; /* Prevents horizontal scroll on collapse */
+}
+
+.sidenav-collapsed {
+  width: 6rem;
+}
+
+.sidenav .logo-container {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  width: 100%;
+}
+
+.sidenav .logo-container .logo {
+  background: #669de0;
+  text-align: center;
+  width: 3rem;
+  min-width: 3rem;
+  border-radius: 0.313rem;
+  padding: 0.313rem;
+  font-size: 22px;
+  font-weight: 900;
+  cursor: pointer;
+  border: solid 1px;
+  color: white;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+.sidenav .logo-container .logo {
+  background: #669de0;
+  text-align: center;
+  width: 3rem;
+  min-width: 3rem;
+  border-radius: 0.313rem;
+  padding: 0.313rem;
+  font-size: 18px;
+  font-weight: 900;
+  cursor: pointer;
+  border: solid 1px;
+  color: white;
+  transition: background-color 0.7s ease, color 0.5s ease;
+}
+
+.sidenav .logo-container .logo:hover {
+  background-color: white;
+  color: #669de0; /* Match the original background color for contrast */
+}
+
+
+.sidenav .logo-container .logo-text {
+  margin-left: 1.5rem;
+  font-size: 24px;
+  font-weight: 700;
+  color: #fff;
+  white-space: nowrap;
+  transition: opacity 0.3s ease, margin 0.3s ease;
+}
+
+.sidenav-collapsed .logo-text {
+  opacity: 0;
+  margin-left: 0;
+  pointer-events: none;
+}
+
+.sidenav-nav {
+  list-style: none;
+  padding: 0.938rem;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  height: calc(100% - 3.65rem);
+  overflow: hidden;
+  transition: padding 0.3s ease;
+}
+
+.sidenav-nav .sidenav-nav-item {
+  width: 100%;
+  margin-bottom: 0.625rem;
+}
+
+.sidenav-nav .sidenav-nav-item .sidenav-nav-link {
+  display: flex;
+  align-items: center;
+  height: 3rem;
+  color: #f3f3f3;
+  text-decoration: none;
+  border-radius: 0.625rem;
+  transition: all 0.3s ease;
+}
+
+.sidenav-nav .sidenav-nav-item .sidenav-nav-link .sidenav-link-icon {
+  font-size: 22px;
+  width: 2rem;
+  min-width: 2rem;
+  text-align: center;
+  padding: 6px;
+}
+
+.sidenav-nav .sidenav-nav-item .sidenav-nav-link .sidenav-link-text {
+  margin-left: 1.5rem;
+  white-space: nowrap;
+  transition: opacity 0.3s ease, margin 0.3s ease;
+}
+
+.sidenav-collapsed .sidenav-link-text {
+  opacity: 0;
+  margin-left: 0;
+  pointer-events: none;
+}
+
+.sidenav-nav .sidenav-nav-item:hover .sidenav-nav-link {
+  background-color: #3582e7;
+  color: #000;
+}
+
+.active {
+  background-color: #3582e7;
+}
+.active .sidenav-link-icon,
+.active .sidenav-link-text {
+  color: #f8f4f4;
+}
+
+

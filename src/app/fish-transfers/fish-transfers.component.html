@@ -1,0 +1,122 @@
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-4 position-relative">
+    <h2 class="mx-auto">Fish Transfers</h2>
+  </div>
+
+  <!-- Date Picker -->
+  <div class="d-flex justify-content-center align-items-center mb-4">
+    <label for="transferDate" class="form-label me-2"><strong>Select Date:</strong></label>
+    <input
+      id="transferDate"
+      type="date"
+      [(ngModel)]="transferDate"
+      class="form-control d-inline-block"
+      style="max-width: 200px;"
+    />
+  </div>
+
+  <!-- Button to Open Modal -->
+  <div class="text-center mb-4">
+    <button class="btn btn-primary" (click)="openModal()">Record New Transfer</button>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal fade" tabindex="-1" [ngClass]="{'show': showModal}" [style.display]="showModal ? 'block' : 'none'" aria-modal="true" role="dialog">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+
+        <div class="modal-header">
+          <h5 class="modal-title">
+            {{ editIndex !== null ? 'Edit Transfer' : 'Record New Transfer' }}
+          </h5>
+          <button type="button" class="btn-close" aria-label="Close" (click)="closeModal()"></button>
+        </div>
+
+        <div class="modal-body">
+          <form (ngSubmit)="addTransfer()">
+            <div class="mb-3">
+              <label for="fromCage" class="form-label">From Cage</label>
+              <select id="fromCage" class="form-select" [(ngModel)]="newTransfer.fromCageId" name="fromCage">
+                <option [ngValue]="null">-- Select Cage --</option>
+                <option *ngFor="let cage of cages" [value]="cage.id">{{ cage.name }}</option>
+              </select>
+            </div>
+
+            <div class="mb-3">
+              <label for="toCage" class="form-label">To Cage</label>
+              <select id="toCage" class="form-select" [(ngModel)]="newTransfer.toCageId" name="toCage">
+                <option [ngValue]="null">-- Select Cage --</option>
+                <option *ngFor="let cage of cages" [value]="cage.id">{{ cage.name }}</option>
+              </select>
+            </div>
+
+            <div class="mb-3">
+              <label for="species" class="form-label">Species</label>
+              <select id="species" class="form-select" [(ngModel)]="newTransfer.species" name="species">
+                <option value="">-- Select Species --</option>
+                <option *ngFor="let s of speciesList" [value]="s">{{ s }}</option>
+              </select>
+            </div>
+
+            <div class="mb-3">
+              <label for="qty" class="form-label">Quantity</label>
+              <input
+                id="qty"
+                type="number"
+                min="1"
+                class="form-control"
+                [(ngModel)]="newTransfer.qty"
+                name="qty"
+                placeholder="Enter quantity"
+              />
+            </div>
+
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" (click)="closeModal()">Cancel</button>
+              <button type="submit" class="btn btn-primary">
+                {{ editIndex !== null ? 'Update Transfer' : 'Add Transfer' }}
+              </button>
+            </div>
+          </form>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Transfers List -->
+  <div class="mt-5 text-center">
+    <div class="mb-4" style="max-width: 700px; margin: 0 auto;">
+      <h4>Transfers on: {{ transferDate | date: 'dd-MM-yyyy' }}</h4>
+    </div>
+
+    <div class="p-4 mb-4 border rounded shadow-sm bg-white" style="max-width: 700px; margin: 0 auto;">
+      <table class="table w-100">
+        <thead>
+          <tr>
+            <th>From Cage</th>
+            <th>To Cage</th>
+            <th>Species</th>
+            <th>Quantity</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let t of getTransfersForSelectedDate(); let i = index">
+            <td>{{ getCageName(t.fromCageId) }}</td>
+            <td>{{ getCageName(t.toCageId) }}</td>
+            <td>{{ t.species }}</td>
+            <td>{{ t.qty }}</td>
+            <td>
+              <button class="btn btn-sm btn-secondary me-1" (click)="openModal(t, i)">Edit</button>
+              <button class="btn btn-sm btn-danger" (click)="removeTransferByDate(i)">Delete</button>
+            </td>
+          </tr>
+          <tr *ngIf="getTransfersForSelectedDate.length === 0">
+            <td colspan="5" class="text-muted text-center">No transfers available for this date.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

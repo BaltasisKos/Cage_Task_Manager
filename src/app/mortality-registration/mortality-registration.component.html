@@ -1,0 +1,159 @@
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-4 position-relative">
+    <h2 class="mx-auto">Mortality Registration</h2>
+  </div>
+
+  <!-- Date Picker -->
+  <div class="d-flex justify-content-center align-items-center mb-4">
+    <label for="mortalityDate" class="form-label me-2"><strong>Select Date:</strong></label>
+    <input
+      id="mortalityDate"
+      type="date"
+      [(ngModel)]="stockingDate"
+      (ngModelChange)="onDateChange()"
+      class="form-control d-inline-block"
+      style="max-width: 200px;"
+    />
+  </div>
+  <!-- Open Modal Button -->
+  <div class="d-flex justify-content-center align-items-center mb-4 mx-2">
+    <button class="btn btn-primary" (click)="openModal()">
+     Add Mortalities <i class="bi bi-plus-lg "></i> 
+    </button>
+  </div>
+
+  <!-- Modal -->
+  <div
+    class="modal fade show"
+    tabindex="-1"
+    [ngClass]="{ 'd-block': modalVisible }"
+    [style.background]="'rgba(0,0,0,0.5)'"
+    aria-modal="true"
+    role="dialog"
+    *ngIf="modalVisible"
+  >
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">{{ editingCage ? 'Edit Mortality' : 'Register Mortalities for Cages' }}</h5>
+          <button type="button" class="btn-close" aria-label="Close" (click)="closeModal()"></button>
+        </div>
+
+        <div class="modal-body">
+          <!-- Edit single mortality -->
+          <div *ngIf="editingCage; else addMultipleMortality">
+            <table class="table table-bordered">
+              <thead>
+                <tr>
+                  <th>Cage ID</th>
+                  <th>Cage Name</th>
+                  <th>Mortality</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>{{ editingCage.cageId }}</td>
+                  <td>{{ editingCage.cageName }}</td>
+                  <td>
+          <input
+            type="number"
+            class="form-control"
+            [(ngModel)]="editingCage.mortality"
+            min="0"
+          />
+        </td>                  
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Add/Edit multiple cages mortality -->
+          <ng-template #addMultipleMortality>
+            <table class="table table-bordered">
+              <thead>
+                <tr>
+                  <th>Cage ID</th>
+                  <th>Cage Name</th>
+                  <th>Mortality</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let cageMortality of cagesWithStock; let i = index">
+        <td>{{ cageMortality.cageId }}</td>
+        <td>{{ cageMortality.cageName }}</td>
+        <td>
+          <input
+            type="number"
+            class="form-control"
+            [(ngModel)]="cagesWithStock[i].mortality"
+            min="0"
+          />
+        </td>
+              </tbody>
+            </table>
+          </ng-template>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="closeModal()">Cancel</button>
+          <button
+            type="button"
+            class="btn btn-primary"
+            (click)="saveStocking()"
+            [disabled]="isSaveDisabled()"
+          >
+            Save
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mortality Summary Section -->
+  <div class="mt-5 text-center">
+    <div class="mb-4" style="max-width: 600px; margin: 0 auto;">
+      <h4 class="text-center">Mortality Summary</h4>
+    </div>
+
+    <div class="p-4 mb-4 border rounded shadow-sm bg-white" style="max-width: 600px; margin: 0 auto;">
+      <p>
+        <strong>Date:</strong> {{ stockingDate | date: 'dd-MM-yyyy' }}
+      </p>
+
+      <table class="table w-100">
+        <thead>
+          <tr>
+            <th>Cage ID</th>
+            <th>Cage Name</th>
+            <th>Mortality</th>
+            <th class="text-center">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let mortality of stockedFishSummary">
+            <td>{{ mortality.cageId }}</td>
+            <td>{{ getCageNameById(mortality.cageId) }}</td>
+            <td>{{mortality.mortality ?? 0}}</td>
+            <td class="text-end">
+              <button
+                type="button"
+                class="btn btn-secondary"
+                (click)="openEditModal(mortality)"
+              >
+                Edit
+              </button>
+            </td>
+          </tr>
+          <tr *ngIf="stockedFishSummary.length === 0">
+            <td colspan="4" class="text-muted text-center">No mortality data available for this date.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <button class="btn btn-warning" (click)="clearTableEntries()">
+          Clear Table
+        </button>
+      
+    </div>
+  </div>
+</div>

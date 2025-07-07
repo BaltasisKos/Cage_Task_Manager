@@ -1,0 +1,174 @@
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-4 position-relative">
+    <h2 class="mx-auto">Fish Stocking</h2>
+  </div>
+
+  <!-- Date Picker -->
+  <div class="d-flex justify-content-center align-items-center mb-4">
+    <label for="stockingDate" class="form-label me-2"><strong>Select Date:</strong></label>
+    <input
+      id="stockingDate"
+      type="date"
+      [(ngModel)]="stockingDate"
+      (ngModelChange)="onDateChange()"
+      class="form-control d-inline-block"
+      style="max-width: 200px;"
+    />
+  </div>
+  <!-- Add Button -->
+  <div class="d-flex justify-content-center align-items-center mb-4 mx-3">
+    <button class="btn btn-primary" (click)="openModal()">
+      Add Fish <i class="bi bi-plus-lg"></i>
+    </button>
+  </div>
+
+  <!-- Modal -->
+  <div
+    class="modal fade show"
+    tabindex="-1"
+    [ngClass]="{ 'd-block': modalVisible }"
+    [style.background]="'rgba(0,0,0,0.5)'"
+    aria-modal="true"
+    role="dialog"
+    *ngIf="modalVisible"
+  >
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">{{ editingCage ? 'Edit Fish Stocking' : 'Add Fish to Empty Cages' }}</h5>
+          <button type="button" class="btn-close" aria-label="Close" (click)="closeModal()"></button>
+        </div>
+
+        <div class="modal-body">
+          <!-- If editing, show single entry form -->
+          <div *ngIf="editingCage; else addMultiple">
+            <table class="table table-bordered">
+              <thead>
+                <tr>
+                  <th>Cage ID</th>
+                  <th>Cage Name</th>
+                  <th>Species</th>
+                  <th>Quantity</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>{{ editingCage.cageId }}</td>
+                  <td>{{ editingCage.cageName }}</td>
+                  <td>
+                    <select class="form-select" [(ngModel)]="editingCage.species">
+                      <option value="">Select species</option>
+                      <option *ngFor="let sp of speciesList" [value]="sp">{{ sp }}</option>
+                    </select>
+                  </td>
+                  <td>
+                    <input
+                      type="number"
+                      min="1"
+                      class="form-control"
+                      [(ngModel)]="editingCage.qty"
+                      placeholder="Quantity"
+                    />
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Add multiple cages -->
+          <ng-template #addMultiple>
+            <table class="table table-bordered">
+              <thead>
+                <tr>
+                  <th>Cage ID</th>
+                  <th>Cage Name</th>
+                  <th>Species</th>
+                  <th>Quantity</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let cageFish of cagesWithStock">
+                  <td>{{ cageFish.cageId }}</td>
+                  <td>{{ cageFish.cageName }}</td>
+                  <td>
+                    <select class="form-select" [(ngModel)]="cageFish.species">
+                      <option value="">Select species</option>
+                      <option *ngFor="let sp of speciesList" [value]="sp">{{ sp }}</option>
+                    </select>
+                  </td>
+                  <td>
+                    <input
+                      type="number"
+                      min="1"
+                      class="form-control"
+                      [(ngModel)]="cageFish.qty"
+                      placeholder="Quantity"
+                    />
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </ng-template>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="closeModal()">Cancel</button>
+          <button
+            type="button"
+            class="btn btn-primary"
+            (click)="saveStocking()"
+            [disabled]="isSaveDisabled()"
+          >
+            Save
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Summary Section -->
+  <div *ngIf="showStockingSummary && stockingDate" class="mt-5 text-center">
+    <div class=" mb-4 " style="max-width: 600px; margin: 0 auto;">
+    <h4 class="text-center">Fish Stocking Summary</h4>
+    </div>
+    <div class="p-4 mb-4 border rounded shadow-sm bg-white" style="max-width: 600px; margin: 0 auto;">
+      <p>
+        <strong>Date:</strong> {{ stockingDate | date: 'dd-MM-yyyy' }}
+      </p>
+
+      <table class="table w-100">
+        <thead>
+          <tr>
+            <th>Cage ID</th>
+            <th>Cage Name</th>
+            <th>Fish Number</th>
+            <th class="text-center">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let fish of stockedFishSummary">
+            <td>{{ fish.cageId }}</td>
+            <td>{{ getCageNameById(fish.cageId) }}</td>
+            <td>{{ fish.qty }}</td>
+            <td class="text-end">
+              <button
+                type="button"
+                class="btn btn-secondary "
+                (click)="openEditModal(fish)"
+              >
+                Edit
+              </button>
+            </td>
+          </tr>
+          <tr *ngIf="stockedFishSummary.length === 0">
+            <td colspan="4" class="text-muted text-center">No stock data available for this date.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <button class="btn btn-warning" (click)="clearTableEntries()">
+        Clear Table 
+      </button>
+    </div>
+  </div>
+</div>

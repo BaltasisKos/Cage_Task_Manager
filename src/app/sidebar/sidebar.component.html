@@ -1,0 +1,38 @@
+<div
+  class="sidenav d-flex flex-column"
+  [ngClass]="{ 'sidenav-collapsed': isLeftSidebarCollapsed() }"
+>
+  <div class="logo-container d-flex align-items-center px-2 py-3">
+    <div
+      class="logo-text text-white fs-4 fw-bold ms-3"
+      [ngClass]="{ 'd-none': isLeftSidebarCollapsed() }"
+    >
+      Cage Track Manager
+    </div>
+    <button class="logo btn btn-light ms-3" (click)="toggleCollapse()">
+      <i class="bi bi-list"></i>
+    </button>
+    
+  </div>
+
+  <ul class="sidenav-nav px-3 mt-3 d-flex flex-column align-items-center">
+    @for (item of items; track $index) {
+      <li class="sidenav-nav-item w-100 mb-2">
+        <a
+          class="sidenav-nav-link d-flex align-items-center text-decoration-none text-light px-3 py-2 rounded"
+          [routerLink]="item.routeLink"
+          routerLinkActive="active"
+          [routerLinkActiveOptions]="{ exact: true }"
+        >
+          <i class="sidenav-link-icon me-4" [class]=item.icon></i>
+          <span
+            class="sidenav-link-text ms-2"
+            [ngClass]="{ 'd-none': isLeftSidebarCollapsed() }"
+          >
+            {{ item.label }}
+          </span>
+        </a>
+      </li>
+    }
+  </ul>
+</div>

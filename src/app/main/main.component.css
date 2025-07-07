@@ -1,0 +1,11 @@
+.body-trimmed {
+  margin-left: 21rem; /* When sidebar is expanded */
+  margin-top: 8px;
+  transition: margin-left 0.3s ease;
+}
+
+.body-md-screen {
+  margin-left: 7rem; /* When sidebar is collapsed */
+  margin-top: 8px;
+  transition: margin-left 0.3s ease;
+}

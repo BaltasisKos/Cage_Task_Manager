@@ -1,0 +1,23 @@
+.app-header {
+  position: relative;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 70px;
+  z-index: 0;
+  background-color: #669de0;
+  padding-left: 30px;
+  
+}
+/* header.component.css */
+.custom-logout-btn {
+  border-color: #ffffff;   
+  color: #ffffff;  
+  margin-top: 6px;        
+}
+
+.custom-logout-btn:hover {
+  background-color: #ffffff;
+  color: rgb(84, 158, 253);
+}
+
