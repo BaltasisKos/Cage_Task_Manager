@@ -4,6 +4,7 @@ import { NgChartsModule } from 'ng2-charts';
 import { ChartDataset, ChartOptions } from 'chart.js';
 import { BasicAnalysisService } from '../Service/basic-analysis.service';
 import { MortalityService } from '../Service/mortality.service';
+import { combineLatest } from 'rxjs';
 
 @Component({
   selector: 'app-basic-analysis',
@@ -34,20 +35,33 @@ export class BasicAnalysisComponent implements OnInit {
   private mortalityService: MortalityService
 ) {}
 
-  ngOnInit() {
-  this.basicAnalysisService.stockingData$.subscribe(stockingData => {
-    this.lineChartData = [
-      this.lineChartData[0],
-      { ...this.lineChartData[1], data: [...stockingData] }
-    ];
-  });
 
-  this.mortalityService.mortalityData$.subscribe(mortalityData => {
+ngOnInit() {
+  combineLatest([
+    this.basicAnalysisService.stockingData$,
+    this.mortalityService.mortalityData$
+  ]).subscribe(([stockingData, mortalityData]) => {
     this.lineChartData = [
-      { ...this.lineChartData[0], data: [...mortalityData] },
-      this.lineChartData[1]
+      {
+        ...this.lineChartData[1],  // keep your first dataset config if any
+        data: [...stockingData],
+        label: 'Stocking',
+      },
+      {
+        ...this.lineChartData[0],  // keep your second dataset config if any
+        data: [...mortalityData],
+        label: 'Mortality',
+      }
     ];
   });
 }
+clearChart() {
+  this.lineChartData = [
+    { data: [], label: 'Mortality', borderColor: 'red', fill: false, tension: 0.3 },
+    { data: [], label: 'Fish Stocking', borderColor: 'blue', fill: false, tension: 0.3 }
+  ];
+}
+
+
 
 }

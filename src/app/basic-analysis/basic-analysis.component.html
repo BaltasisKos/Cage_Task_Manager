@@ -1,7 +1,16 @@
-<div style="display: block;">
+<div class="container mt-5">
+<div class="d-flex justify-content-between align-items-center mb-4 m-t4 position-relative">
+    <h2 class="mx-auto">Basic Analysis</h2>
+  </div>
+
+<div class="chart-container" style="display: block;">
   <canvas baseChart
           [data]="{ labels: lineChartLabels, datasets: lineChartData }"
           [options]="lineChartOptions"
           [type]="lineChartType">
   </canvas>
+  <div class="d-flex justify-content-center align-items-center mt-4 mx-2">
+  <button class="btn btn-outline-danger" (click)="clearChart()">Clear Chart</button>
+  </div>
+</div>
 </div>

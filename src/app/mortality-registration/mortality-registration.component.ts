@@ -5,6 +5,8 @@ import { MortalityService, MortalityEntry } from '../Service/mortality.service';
 import { Fish } from '../models/fish.model';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
+import { BasicAnalysisService } from '../Service/basic-analysis.service';
 
 interface CageFishEntry {
   cageId: number;
@@ -29,7 +31,6 @@ export class MortalityRegistrationComponent implements OnInit {
   showStockingSummary = false;
   stockedFishSummary: Fish[] = [];
 
-  speciesList = ['Tilapia', 'Salmon', 'Catfish'];
 
   cageIdNameMap: { [key: number]: string } = {};
 
@@ -38,7 +39,9 @@ export class MortalityRegistrationComponent implements OnInit {
   constructor(
     private cageService: CageService,
     private stockService: StockService,
-    private mortalityService: MortalityService
+    private mortalityService: MortalityService,
+    private router: Router,
+    private basicAnalysisService: BasicAnalysisService
   ) {}
 
   ngOnInit() {
@@ -224,4 +227,20 @@ export class MortalityRegistrationComponent implements OnInit {
     this.stockedFishSummary = [...this.stockedFishSummary];
     this.showStockingSummary = this.stockedFishSummary.length > 0;
   }
+
+ hasMortalityRecorded(): boolean {
+  const mortalityEntries = this.mortalityService.getMortalityByDate(new Date(this.stockingDate));
+  
+  return mortalityEntries.some(entry => entry.mortality != null && entry.mortality > 0);
+}
+
+  goToBackPage() {
+    this.router.navigate(['/fish-stocking']);
+  }
+
+  goToNextPage() {
+    if (this.hasMortalityRecorded()) {
+    this.router.navigate(['/stock-balance-view']);
+  }
+}
 }

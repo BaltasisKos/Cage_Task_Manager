@@ -149,11 +149,17 @@
           </tr>
         </tbody>
       </table>
-
-      <button class="btn btn-warning" (click)="clearTableEntries()">
-          Clear Table
-        </button>
-      
+        <div class="d-flex align-items-center justify-content-between" style="max-width: 540px; margin: 0 auto;">
+          <button type="button" class="btn btn-primary" (click)="goToBackPage()">
+            Back
+          </button>
+          <button type="button" class="btn btn-warning" (click)="clearTableEntries()">
+            Clear Table
+          </button>
+          <button type="button" class="btn btn-success" [disabled]="!hasMortalityRecorded()" (click)="goToNextPage()">
+            Next
+          </button>
+        </div>
     </div>
   </div>
 </div>

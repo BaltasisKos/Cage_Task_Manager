@@ -4,6 +4,7 @@ import { StockService } from '../Service/stock.service';
 import { Fish } from '../models/fish.model';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 
 interface CageStockBalance {
   cageId: number;
@@ -38,7 +39,8 @@ export class StockBalanceViewComponent implements OnInit {
 
   constructor(
     private cageService: CageService,
-    private stockService: StockService
+    private stockService: StockService,
+    private router: Router
   ) {}
 
   ngOnInit() {
@@ -245,8 +247,13 @@ export class StockBalanceViewComponent implements OnInit {
     });
   }
 }
-
-
-
+  goToBackPage() {
+    this.router.navigate(['/mortality-registration']);
   }
+
+  openPage() {
+    this.router.navigate(['/basic-analysis'])
+  }
+}
+
 

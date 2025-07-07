@@ -12,6 +12,6 @@ export const routes: Routes = [
   { path: 'fish-stocking', component: FishStockingComponent },
   { path: 'mortality-registration', component: MortalityRegistrationComponent },
   { path: 'stock-balance-view', component: StockBalanceViewComponent},
+  { path: 'basic-analysis', component: BasicAnalysisComponent},
   { path: 'fish-transfers', component: FishTransfersComponent},
-  { path: 'basic-analysis', component: BasicAnalysisComponent  }
 ];

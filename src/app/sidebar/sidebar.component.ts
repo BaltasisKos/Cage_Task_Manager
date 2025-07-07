@@ -35,15 +35,16 @@ export class SidebarComponent {
     label: 'Stock Balance View',
   },
   {
-    routeLink: 'fish-transfers',
-    icon: 'fa-solid fa-right-left',
-    label: 'Fish Transfers',
-  },
-  {
     routeLink: 'basic-analysis',
     icon: 'fa-solid fa-chart-line',
     label: 'Basic Analysis',
   },
+  {
+    routeLink: 'fish-transfers',
+    icon: 'fa-solid fa-right-left',
+    label: 'Fish Transfers',
+  },
+  
 ];
 
   toggleCollapse(): void {

@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { CageService } from '../Service/cage.service';
 import { Cage } from '../models/cage.model';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-cage-management',
@@ -12,23 +13,32 @@ import { Cage } from '../models/cage.model';
   styleUrls: ['./cage-management.component.css']
 })
 export class CageManagementComponent {
-@ViewChild('cageInput') cageInputRef!: ElementRef;
+  @ViewChild('cageInput') cageInputRef!: ElementRef;
 
   cages: Cage[] = [];
   modalVisible = false;
   isEditing = false;
   editingCage: Cage | null = null;
   cageNameInput = '';
+  hasCreatedCage = false; // ✅ Used to control Next button
 
   private nextId = 1;
 
-  constructor(private cageService: CageService) {
+  constructor(
+    private cageService: CageService,
+    private router: Router
+  ) {
     this.cageService.cages$.subscribe(cages => {
       this.cages = cages;
 
       // Keep nextId higher than any existing id to avoid duplicates
       const maxId = cages.length ? Math.max(...cages.map(c => c.id)) : 0;
       this.nextId = maxId + 1;
+
+      // Disable Next if no cages remain
+      if (cages.length === 0) {
+        this.hasCreatedCage = false;
+      }
     });
   }
 
@@ -52,10 +62,8 @@ export class CageManagementComponent {
     });
   }
 
-  
   save() {
     if (!this.cageNameInput.trim()) return;
-    
 
     if (this.isEditing && this.editingCage) {
       this.cageService.updateCage({ ...this.editingCage, name: this.cageNameInput.trim() });
@@ -66,6 +74,7 @@ export class CageManagementComponent {
         status: 'Empty'
       };
       this.cageService.addCage(newCage);
+      this.hasCreatedCage = true; // ✅ Cage created successfully
     }
 
     this.closeModal();
@@ -73,10 +82,16 @@ export class CageManagementComponent {
 
   deleteCage(id: number) {
     const stockedFish: any[] = JSON.parse(localStorage.getItem('stockedFish') || '[]');
-  const updatedFish = stockedFish.filter(f => f.cageId !== id);
-  localStorage.setItem('stockedFish', JSON.stringify(updatedFish));
+    const updatedFish = stockedFish.filter(f => f.cageId !== id);
+    localStorage.setItem('stockedFish', JSON.stringify(updatedFish));
 
     this.cageService.deleteCage(id);
+  }
+
+  goToNextPage() {
+    if (this.hasCreatedCage) {
+      this.router.navigate(['/fish-stocking']);
+    }
   }
 
   closeModal() {

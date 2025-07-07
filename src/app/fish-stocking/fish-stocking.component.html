@@ -165,10 +165,17 @@
           </tr>
         </tbody>
       </table>
+        <div class="d-flex align-items-center justify-content-between" style="max-width: 540px; margin: 0 auto;">
+          <button type="button" class="btn btn-primary" (click)="goToBackPage()">
+            Back
+          </button>
+          <button type="button" class="btn btn-warning" (click)="clearTableEntries()">
+            Clear Table
+          </button>
+          <button type="button" class="btn btn-success" [disabled]="!hasFishAdded()" (click)="goToNextPage()">
+            Next
+          </button>
+        </div>
 
-      <button class="btn btn-warning" (click)="clearTableEntries()">
-        Clear Table 
-      </button>
-    </div>
   </div>
 </div>

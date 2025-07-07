@@ -1,0 +1,12 @@
+.chart-container {
+  width: 700px;        /* smaller width, adjust as needed */
+  margin: 0 auto;      /* centers the container horizontally */
+  text-align: center;  /* center-aligns the button */
+}
+
+.chart-container canvas {
+  max-width: 100%;     /* make canvas responsive within container */
+  height: 400px;       /* fixed height, adjust as needed */
+  display: block;
+  margin: 0 auto;      /* center canvas if smaller than container */
+}

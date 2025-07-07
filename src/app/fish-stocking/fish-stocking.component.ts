@@ -5,6 +5,7 @@ import { Fish } from '../models/fish.model';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { BasicAnalysisService } from '../Service/basic-analysis.service';
+import { Router } from '@angular/router';
 
 interface CageFishEntry {
   cageId: number;
@@ -28,17 +29,24 @@ export class FishStockingComponent implements OnInit {
   showStockingSummary = false;
   stockedFishSummary: Fish[] = [];
 
+
+
   speciesList = ['Sparus Aurata', 'Dicentrarchus labrax', 'Pagrus pagrus', 'Trout', 'Tilapia'];
 
   cageIdNameMap: { [key: number]: string } = {};
 
   editingCage: CageFishEntry | null = null;
 
+
+
   constructor(
     private cageService: CageService,
     private stockService: StockService,
-    private basicAnalysisService: BasicAnalysisService  // <-- injected here properly
+    private basicAnalysisService: BasicAnalysisService,
+    private router: Router
   ) {}
+
+
 
   ngOnInit() {
     this.cageService.cages$.subscribe(cages => {
@@ -137,6 +145,8 @@ export class FishStockingComponent implements OnInit {
     this.saveToLocalStorage(this.stockingDate, allData[this.stockingDate]);
     this.loadSummaryForDate(this.stockingDate);
     this.updateMonthlyStockingData(); // <-- update monthly data after save
+
+    
     this.closeModal();
   }
 
@@ -219,4 +229,25 @@ export class FishStockingComponent implements OnInit {
     // Send aggregated data to the shared service
     this.basicAnalysisService.updateStockingData(monthlyTotals);
   }
+
+  hasFishAdded(): boolean {
+  
+  const hasInSummary = this.stockedFishSummary.some(fish =>
+    fish.qty && fish.qty > 0 && fish.species && fish.species.trim() !== ''
+  );
+
+  return  hasInSummary;
+}
+
+
+
+  goToBackPage() {
+    this.router.navigate(['/cage-management']);
+  }
+
+  goToNextPage() {
+    if (this.hasFishAdded()) {
+    this.router.navigate(['/mortality-registration']);
+  }
+}
 }
