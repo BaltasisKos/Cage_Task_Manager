@@ -11,14 +11,15 @@
       type="date"
       [(ngModel)]="stockingDate"
       (ngModelChange)="onDateChange()"
-      class="form-control d-inline-block"
+      class="form-control"
       style="max-width: 200px;"
     />
   </div>
-  <!-- Open Modal Button -->
-  <div class="d-flex justify-content-center align-items-center mb-4 mx-2">
+
+  <!-- Add Mortalities Button -->
+  <div class="d-flex justify-content-center mb-4">
     <button class="btn btn-primary" (click)="openModal()">
-     Add Mortalities <i class="bi bi-plus-lg "></i> 
+      Add Mortalities <i class="bi bi-plus-lg"></i>
     </button>
   </div>
 
@@ -40,8 +41,8 @@
         </div>
 
         <div class="modal-body">
-          <!-- Edit single mortality -->
-          <div *ngIf="editingCage; else addMultipleMortality">
+          <!-- Edit Single Mortality -->
+          <div *ngIf="editingCage; else multipleCageEntry">
             <table class="table table-bordered">
               <thead>
                 <tr>
@@ -55,20 +56,20 @@
                   <td>{{ editingCage.cageId }}</td>
                   <td>{{ editingCage.cageName }}</td>
                   <td>
-          <input
-            type="number"
-            class="form-control"
-            [(ngModel)]="editingCage.mortality"
-            min="0"
-          />
-        </td>                  
+                    <input
+                      type="number"
+                      class="form-control"
+                      [(ngModel)]="editingCage.mortality"
+                      min="0"
+                    />
+                  </td>
                 </tr>
               </tbody>
             </table>
           </div>
 
-          <!-- Add/Edit multiple cages mortality -->
-          <ng-template #addMultipleMortality>
+          <!-- Add Multiple Mortalities -->
+          <ng-template #multipleCageEntry>
             <table class="table table-bordered">
               <thead>
                 <tr>
@@ -78,17 +79,18 @@
                 </tr>
               </thead>
               <tbody>
-                <tr *ngFor="let cageMortality of cagesWithStock; let i = index">
-        <td>{{ cageMortality.cageId }}</td>
-        <td>{{ cageMortality.cageName }}</td>
-        <td>
-          <input
-            type="number"
-            class="form-control"
-            [(ngModel)]="cagesWithStock[i].mortality"
-            min="0"
-          />
-        </td>
+                <tr *ngFor="let cage of cagesWithMortality; let i = index">
+                  <td>{{ cage.cageId }}</td>
+                  <td>{{ cage.cageName }}</td>
+                  <td>
+                    <input
+                      type="number"
+                      class="form-control"
+                      [(ngModel)]="cagesWithMortality[i].mortality"
+                      min="0"
+                    />
+                  </td>
+                </tr>
               </tbody>
             </table>
           </ng-template>
@@ -96,12 +98,7 @@
 
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" (click)="closeModal()">Cancel</button>
-          <button
-            type="button"
-            class="btn btn-primary"
-            (click)="saveStocking()"
-            [disabled]="isSaveDisabled()"
-          >
+          <button type="button" class="btn btn-primary" (click)="saveMortality()" [disabled]="isSaveDisabled()">
             Save
           </button>
         </div>
@@ -109,16 +106,14 @@
     </div>
   </div>
 
-  <!-- Mortality Summary Section -->
+  <!-- Mortality Summary -->
   <div class="mt-5 text-center">
     <div class="mb-4" style="max-width: 600px; margin: 0 auto;">
       <h4 class="text-center">Mortality Summary</h4>
     </div>
 
     <div class="p-4 mb-4 border rounded shadow-sm bg-white" style="max-width: 600px; margin: 0 auto;">
-      <p>
-        <strong>Date:</strong> {{ stockingDate | date: 'dd-MM-yyyy' }}
-      </p>
+      <p><strong>Date:</strong> {{ stockingDate | date: 'dd-MM-yyyy' }}</p>
 
       <table class="table w-100">
         <thead>
@@ -130,36 +125,27 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let mortality of stockedFishSummary">
-            <td>{{ mortality.cageId }}</td>
-            <td>{{ getCageNameById(mortality.cageId) }}</td>
-            <td>{{mortality.mortality ?? 0}}</td>
+          <tr *ngFor="let entry of cagesWithMortality">
+            <td>{{ entry.cageId }}</td>
+            <td>{{ entry.cageName }}</td>
+            <td>{{ entry.mortality ?? 0 }}</td>
             <td class="text-end">
-              <button
-                type="button"
-                class="btn btn-secondary"
-                (click)="openEditModal(mortality)"
-              >
-                Edit
-              </button>
+              <button type="button" class="btn btn-secondary" (click)="openEditModal(entry)">Edit</button>
             </td>
           </tr>
-          <tr *ngIf="stockedFishSummary.length === 0">
+          <tr *ngIf="cagesWithMortality.length === 0">
             <td colspan="4" class="text-muted text-center">No mortality data available for this date.</td>
           </tr>
         </tbody>
       </table>
-        <div class="d-flex align-items-center justify-content-between" style="max-width: 540px; margin: 0 auto;">
-          <button type="button" class="btn btn-primary" (click)="goToBackPage()">
-            Back
-          </button>
-          <button type="button" class="btn btn-warning" (click)="clearTableEntries()">
-            Clear Table
-          </button>
-          <button type="button" class="btn btn-success" [disabled]="!hasMortalityRecorded()" (click)="goToNextPage()">
-            Next
-          </button>
-        </div>
+
+      <div class="d-flex align-items-center justify-content-between" style="max-width: 540px; margin: 0 auto;">
+        <button type="button" class="btn btn-primary" (click)="goToBackPage()">Back</button>
+        <button type="button" class="btn btn-warning" (click)="clearTableEntries()">Clear Table</button>
+        <button type="button" class="btn btn-success" [disabled]="!hasMortalityRecorded()" (click)="goToNextPage()">
+          Next
+        </button>
+      </div>
     </div>
   </div>
 </div>
