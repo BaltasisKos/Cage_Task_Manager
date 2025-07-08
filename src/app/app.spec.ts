@@ -1,12 +1,28 @@
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { AppComponent } from './app';
+import { ActivatedRoute } from '@angular/router';
+import { of } from 'rxjs';
 
 describe('App', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [AppComponent],
-      providers: [provideZonelessChangeDetection()]
+      providers: [
+        provideZonelessChangeDetection(),
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            params: of({}),  
+            queryParams: of({}), 
+            snapshot: {
+              paramMap: {
+                get: (key: string) => null  
+              }
+            }
+          }
+        }
+      ]
     }).compileComponents();
   });
 
@@ -16,10 +32,10 @@ describe('App', () => {
     expect(app).toBeTruthy();
   });
 
-  it('should render title', () => {
-    const fixture = TestBed.createComponent(AppComponent);
-    fixture.detectChanges();
-    const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('h1')?.textContent).toContain('Hello, sidebarpro');
+  it('should contain app-header component', () => {
+  const fixture = TestBed.createComponent(AppComponent);
+  fixture.detectChanges();
+  const compiled = fixture.nativeElement as HTMLElement;
+  expect(compiled.querySelector('app-header')).toBeTruthy();
   });
 });
