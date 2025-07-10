@@ -10,6 +10,7 @@
       id="transferDate"
       type="date"
       [(ngModel)]="transferDate"
+      (change)="onDateChange(transferDate)"
       class="form-control d-inline-block"
       style="max-width: 200px;"
     />
@@ -112,7 +113,7 @@
               <button class="btn btn-sm btn-danger" (click)="removeTransferByDate(i)">Delete</button>
             </td>
           </tr>
-          <tr *ngIf="getTransfersForSelectedDate.length === 0">
+          <tr *ngIf="getTransfersForSelectedDate().length === 0">
             <td colspan="5" class="text-muted text-center">No transfers available for this date.</td>
           </tr>
         </tbody>

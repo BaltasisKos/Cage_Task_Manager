@@ -1,8 +1,9 @@
 export interface Fish {
   cageId: number;
+  cageName?: string;
   species: string;
-  qty: number;
-  mortality?: number;
+  qty: number | null;
+  mortality?: number | null;
   reamaining?: number;
-  date: Date;
+  date?: Date;
 }

@@ -1,21 +1,22 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
-import { Fish } from '../models/fish.model';
+
+import { Stocking } from '../models/stocking.model';
 
 @Injectable({
   providedIn: 'root'
 })
 export class StockService {
-  private stockedFishSubject = new BehaviorSubject<Fish[]>([]);
+  private stockedFishSubject = new BehaviorSubject<Stocking[]>([]);
   stockedFish$ = this.stockedFishSubject.asObservable();
 
-  addStockedFish(newFish: Fish[]) {
+  addStockedFish(newFish: Stocking[]) {
     const current = this.stockedFishSubject.getValue();
     this.stockedFishSubject.next([...current, ...newFish]);
   }
 
-  getFishByDate(date: Date): Fish[] {
-    const allFish: Fish[] = JSON.parse(localStorage.getItem('stockedFish') || '[]');
+  getFishByDate(date: Date): Stocking[] {
+    const allFish: Stocking[] = JSON.parse(localStorage.getItem('stockedFish') || '[]');
     const targetDate = date.toISOString().slice(0, 10); // yyyy-mm-dd
 
     return allFish.filter(fish => {

@@ -9,7 +9,7 @@
     <input
       id="mortalityDate"
       type="date"
-      [(ngModel)]="stockingDate"
+      [(ngModel)]="mortalityDate"
       (ngModelChange)="onDateChange()"
       class="form-control"
       style="max-width: 200px;"
@@ -113,7 +113,7 @@
     </div>
 
     <div class="p-4 mb-4 border rounded shadow-sm bg-white" style="max-width: 600px; margin: 0 auto;">
-      <p><strong>Date:</strong> {{ stockingDate | date: 'dd-MM-yyyy' }}</p>
+      <p><strong>Date:</strong> {{ mortalityDate | date: 'dd-MM-yyyy' }}</p>
 
       <table class="table w-100">
         <thead>

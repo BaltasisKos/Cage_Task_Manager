@@ -1,19 +1,13 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CageService } from '../Service/cage.service';
-import { StockService } from '../Service/stock.service';
 import { Fish } from '../models/fish.model';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-
-interface CageStockBalance {
-  cageId: number;
-  cageName: string;
-  species: string;
-  stocked: number;
-  mortality: number;
-  balance: number;
-}
+import { Subscription } from 'rxjs';
+import { Balance } from '../models/balance.model';
+import { Mortality, MortalityEntry } from '../models/mortality.model';
+import { MortalityService } from '../Service/mortality.service';
 
 @Component({
   selector: 'app-stock-balance-view',
@@ -21,239 +15,215 @@ interface CageStockBalance {
   standalone: true,
   imports: [CommonModule, FormsModule]
 })
-export class StockBalanceViewComponent implements OnInit {
+export class StockBalanceViewComponent implements OnInit, OnDestroy {
   cages: any[] = [];
   cageIdNameMap: { [key: number]: string } = {};
-  
   stockedFishSummary: Fish[] = [];
-  stockBalanceList: CageStockBalance[] = [];
+  mortalitySummary: { cageId: number; mortality: number }[] = [];
+  stockBalanceList: Balance[] = [];
+  private mortalitySub?: Subscription;
 
-  modalVisible = false;
-  editingCage: any = null;
-
-  stockingDate: string = this.getToday();
   balanceDate: string = this.getToday();
-
-  speciesList = ['Sparus Aurata', 'Dicentrarchus labrax', 'Pagrus pagrus', 'Trout', 'Tilapia'];
-  showStockingSummary = false;
 
   constructor(
     private cageService: CageService,
-    private stockService: StockService,
+    private mortalityService: MortalityService,
     private router: Router
   ) {}
 
   ngOnInit() {
-    this.cageService.cages$.subscribe(cages => {
+    this.cageService.cages$.subscribe(async cages => {
       this.cages = cages;
       this.cageIdNameMap = {};
-      cages.forEach(c => this.cageIdNameMap[c.id] = c.name);
+      cages.forEach(c => (this.cageIdNameMap[c.id] = c.name));
 
-      this.loadCagesWithStock();
-      this.loadSummaryForDate(this.stockingDate);
+      await this.loadSummaryForDate(this.balanceDate);
+      await this.loadMortalityForDate(this.balanceDate);
       this.calculateStockBalance();
     });
+
+    this.mortalitySub = this.mortalityService.mortalityData$.subscribe(async () => {
+      await this.loadMortalityForDate(this.balanceDate);
+      this.calculateStockBalance();
+    });
+  }
+
+  ngOnDestroy() {
+    this.mortalitySub?.unsubscribe();
   }
 
   getToday(): string {
     return new Date().toISOString().split('T')[0];
   }
 
-  onDateChange() {
-    this.loadSummaryForDate(this.stockingDate);
-    this.loadCagesWithStock();
+  async onDateChange() {
+    await this.loadSummaryForDate(this.balanceDate);
+    await this.loadMortalityForDate(this.balanceDate);
     this.calculateStockBalance();
   }
 
-  loadCagesWithStock() {
+  async loadSummaryForDate(date: string) {
     const allData = this.getAllStockingData();
-    const stockedFishForDate = allData[this.stockingDate] || [];
+    const stockedFish = allData[date] || [];
 
-    // Only cages that exist
     this.stockedFishSummary = this.cages.map(cage => {
-      const fishEntry = stockedFishForDate.find(f => f.cageId === cage.id);
+      const match = stockedFish.find(f => f.cageId === cage.id);
       return {
         cageId: cage.id,
-        species: fishEntry ? fishEntry.species : '',
-        qty: fishEntry ? fishEntry.qty : 0,
-        date: new Date(this.stockingDate)
+        species: match?.species || '',
+        qty: match?.qty || 0,
+        date: new Date(date)
       };
     });
   }
 
-  openModal() {
-    this.editingCage = null;
-    this.loadCagesWithStock();
-    this.modalVisible = true;
+  async loadMortalityForDate(date: string) {
+    const dateObj = new Date(date);
+    const entries = await this.mortalityService.getMortalityByDate(dateObj);
+
+    this.mortalitySummary = this.cages.map(cage => {
+      const entry = entries.find(e => e.cageId === cage.id);
+      return {
+        cageId: cage.id,
+        mortality: entry?.mortality || 0
+      };
+    });
   }
 
-  closeModal() {
-    this.modalVisible = false;
-    this.editingCage = null;
-  }
+  calculateStockBalance() {
+    const selectedDate = new Date(this.balanceDate);
+    const stockingData = this.getAllStockingData();
 
-  isSaveDisabled(): boolean {
-    if (this.editingCage) {
-      return !this.editingCage.species.trim() || !this.editingCage.qty || this.editingCage.qty <= 0;
-    }
-    return this.stockedFishSummary.every(c => !c.species.trim() || !c.qty || c.qty <= 0);
-  }
+    const balanceMap: { [cageId: number]: { stocked: number; mortality: number } } = {};
 
-  saveStocking() {
-    const allData = this.getAllStockingData();
-    const existingList = allData[this.stockingDate] || [];
+    // Sum stocked fish up to the selected date
+    for (const dateStr in stockingData) {
+      if (!stockingData.hasOwnProperty(dateStr)) continue;
 
-    if (this.editingCage) {
-      const updatedList = existingList.map(entry =>
-        entry.cageId === this.editingCage.cageId
-          ? {
-              cageId: this.editingCage.cageId,
-              species: this.editingCage.species,
-              qty: this.editingCage.qty,
-              date: new Date(this.stockingDate)
-            }
-          : entry
-      );
-      allData[this.stockingDate] = updatedList;
-      this.editingCage = null;
-    } else {
-      const validEntries = this.stockedFishSummary.filter(
-        c => c.species.trim() !== '' && c.qty !== null && c.qty > 0
-      );
+      const date = new Date(dateStr);
+      if (date <= selectedDate) {
+        for (const entry of stockingData[dateStr]) {
+          if (!this.cageIdNameMap[entry.cageId]) continue;
+          if (!balanceMap[entry.cageId]) balanceMap[entry.cageId] = { stocked: 0, mortality: 0 };
 
-      if (validEntries.length === 0) {
-        alert('Please fill species and quantity for at least one cage.');
-        return;
+          balanceMap[entry.cageId].stocked += Number(entry.qty) || 0;
+        }
       }
-
-      const fishToAdd: Fish[] = validEntries.map(entry => ({
-        cageId: entry.cageId,
-        species: entry.species,
-        qty: entry.qty,
-        date: new Date(this.stockingDate)
-      }));
-
-      allData[this.stockingDate] = fishToAdd;
     }
 
-    this.saveToLocalStorage(this.stockingDate, allData[this.stockingDate]);
-    this.loadSummaryForDate(this.stockingDate);
-    this.calculateStockBalance();
-    this.closeModal();
+    // Use mortalitySummary (already filtered for this.balanceDate)
+    this.mortalitySummary.forEach(entry => {
+      if (!this.cageIdNameMap[entry.cageId]) return;
+      if (!balanceMap[entry.cageId]) balanceMap[entry.cageId] = { stocked: 0, mortality: 0 };
+
+      balanceMap[entry.cageId].mortality += Number(entry.mortality) || 0;
+    });
+
+    this.stockBalanceList = [];
+
+    for (const cageIdStr in balanceMap) {
+      const cageId = +cageIdStr;
+      const data = balanceMap[cageId];
+
+      this.stockBalanceList.push({
+        cageId,
+        cageName: this.getCageNameById(cageId),
+        stocked: data.stocked,
+        mortality: data.mortality,
+        balance: Math.max(0, data.stocked - data.mortality)
+      });
+    }
   }
 
-  openEditModal(fish: Fish) {
-    this.editingCage = {
-      cageId: fish.cageId,
-      cageName: this.getCageNameById(fish.cageId),
-      species: fish.species,
-      qty: fish.qty
-    };
-    this.modalVisible = true;
-  }
-
-  clearTableEntries() {
-    const allData = this.getAllStockingData();
-
-    const clearedFish: Fish[] = this.cages.map(cage => ({
-      cageId: cage.id,
-      species: '',
-      qty: 0,
-      date: new Date(this.stockingDate)
-    }));
-
-    allData[this.stockingDate] = clearedFish;
-    localStorage.setItem('stockingDataByDate', JSON.stringify(allData));
-
-    this.stockedFishSummary = clearedFish;
-    this.showStockingSummary = true;
-    this.calculateStockBalance();
+  getCageNameById(cageId: number): string {
+    return this.cageIdNameMap[cageId] || `Cage ${cageId}`;
   }
 
   getAllStockingData(): { [date: string]: Fish[] } {
     return JSON.parse(localStorage.getItem('stockingDataByDate') || '{}');
   }
 
-  getAllMortalityData(): { [date: string]: { cageId: number; species: string; mortality: number }[] } {
-    return JSON.parse(localStorage.getItem('mortalityDataByDate') || '{}');
-  }
+  getAllMortalityData(): { [date: string]: { cageId: number; mortality: number }[] } {
+    const allRecords: Mortality[] = JSON.parse(localStorage.getItem('mortalityDataByDate') || '[]');
 
-  getCageNameById(cageId: number): string {
-    return this.cageIdNameMap[cageId] || 'Unknown';
-  }
+    const map: { [date: string]: { cageId: number; mortality: number }[] } = {};
 
-  saveToLocalStorage(date: string, fishList: Fish[]) {
-    const allData = this.getAllStockingData();
-    allData[date] = fishList;
-    localStorage.setItem('stockingDataByDate', JSON.stringify(allData));
-  }
+    allRecords.forEach(record => {
+      if (!map[record.date]) map[record.date] = [];
 
-  loadSummaryForDate(date: string) {
-    const allData = this.getAllStockingData();
-    const stockedFish = allData[date] || [];
+      const cageMortalityMap: { [cageId: number]: number } = {};
 
-    // Only cages that exist
-    this.stockedFishSummary = this.cages.map(cage => {
-      const match = stockedFish.find(f => f.cageId === cage.id);
-      return {
-        cageId: cage.id,
-        species: match ? match.species : '',
-        qty: match ? match.qty : 0,
-        date: new Date(date)
-      };
-    });
-
-    this.showStockingSummary = true;
-  }
-
-  calculateStockBalance() {
-  const selectedDate = new Date(this.balanceDate);
-  const stockingData = this.getAllStockingData();
-
-  // Map cageId -> { stocked: number; mortality: number }
-  const balanceMap: { [cageId: number]: { stocked: number; mortality: number } } = {};
-
-  // Aggregate stocked qty and mortality by cageId for all dates <= selectedDate
-  for (const dateStr in stockingData) {
-    const date = new Date(dateStr);
-    if (date <= selectedDate) {
-      for (const entry of stockingData[dateStr]) {
-        if (!this.cageIdNameMap[entry.cageId]) continue; // Skip unknown cages
-
-        if (!balanceMap[entry.cageId]) {
-          balanceMap[entry.cageId] = { stocked: 0, mortality: 0 };
+      record.entries.forEach(entry => {
+        if (!entry.cageId) return;
+        if (!cageMortalityMap[entry.cageId]) {
+          cageMortalityMap[entry.cageId] = 0;
         }
+        cageMortalityMap[entry.cageId] += entry.mortality || 0;
+      });
 
-        balanceMap[entry.cageId].stocked += Number(entry.qty) || 0;
-        balanceMap[entry.cageId].mortality += Number(entry.mortality) || 0;
+      for (const cageId in cageMortalityMap) {
+        map[record.date].push({
+          cageId: Number(cageId),
+          mortality: cageMortalityMap[cageId]
+        });
       }
-    }
-  }
-
-  // Prepare final list — one entry per cage
-  this.stockBalanceList = [];
-
-  for (const cageIdStr in balanceMap) {
-    const cageId = +cageIdStr;
-    const data = balanceMap[cageId];
-
-    this.stockBalanceList.push({
-      cageId,
-      cageName: this.getCageNameById(cageId),
-      species: 'All Species',
-      stocked: data.stocked,
-      mortality: data.mortality,
-      balance: Math.max(0, data.stocked - data.mortality),
     });
+
+    return map;
   }
-}
+
+  saveMortality(date: string, entries: { cageId: number; mortality: number }[]) {
+    const existing: Mortality[] = JSON.parse(localStorage.getItem('mortalityDataByDate') || '[]');
+
+    const newRecord: Mortality = {
+      date,
+      entries
+    };
+
+    // Replace any existing record for this date
+    const updated = existing.filter(record => record.date !== date);
+    updated.push(newRecord);
+
+    localStorage.setItem('mortalityDataByDate', JSON.stringify(updated));
+  }
+
+  clearTableEntries() {
+    const allData = this.getAllStockingData();
+    const clearedFish: Fish[] = this.cages.map(cage => ({
+      cageId: cage.id,
+      species: '',
+      qty: 0,
+      date: new Date(this.balanceDate)
+    }));
+
+    allData[this.balanceDate] = clearedFish;
+    localStorage.setItem('stockingDataByDate', JSON.stringify(allData));
+
+    this.stockedFishSummary = clearedFish;
+    this.calculateStockBalance();
+  }
+
   goToBackPage() {
     this.router.navigate(['/mortality-registration']);
   }
 
   openPage() {
-    this.router.navigate(['/basic-analysis'])
+    this.router.navigate(['/basic-analysis']);
+  }
+
+  // *** ADD THESE HELPER METHODS TO SUPPORT THE TEMPLATE ***
+  getStockedByCageId(cageId: number): number {
+    const entry = this.stockBalanceList.find(e => e.cageId === cageId);
+    return entry ? entry.stocked : 0;
+  }
+
+  getMortalityByCageId(cageId: number): number {
+    const entry = this.stockBalanceList.find(e => e.cageId === cageId);
+    return entry ? entry.mortality : 0;
+  }
+
+  getBalanceByCageId(cageId: number): number {
+    const entry = this.stockBalanceList.find(e => e.cageId === cageId);
+    return entry ? entry.balance : 0;
   }
 }
-
-

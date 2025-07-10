@@ -20,7 +20,7 @@ export class CageManagementComponent {
   isEditing = false;
   editingCage: Cage | null = null;
   cageNameInput = '';
-  hasCreatedCage = false; // ✅ Used to control Next button
+  hasCreatedCage = false;
 
   private nextId = 1;
 

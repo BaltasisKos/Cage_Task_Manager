@@ -3,14 +3,15 @@
     <h2 class="mx-auto">Stock Balance View</h2>
   </div>
 
+
   <!-- Date Picker -->
   <div class="d-flex justify-content-center align-items-center mb-4">
-    <label for="stockingDate" class="form-label me-2"><strong>Select Date:</strong></label>
+    <label for="balanceDate" class="form-label me-2"><strong>Select Date:</strong></label>
     <input
-      id="stockingDate"
+      id="balanceDate"
       type="date"
       [(ngModel)]="balanceDate"
-      (ngModelChange)="calculateStockBalance()"
+      (ngModelChange)="onDateChange()"
       class="form-control d-inline-block"
       style="max-width: 200px;"
     />
@@ -27,36 +28,37 @@
         <strong>Date:</strong> {{ balanceDate | date: 'dd-MM-yyyy' }}
       </p>
 
-      <table class="table w-100">
+      <table class="table w-100 table-striped">
         <thead>
           <tr>
             <th>Cage ID</th>
             <th>Cage Name</th>
+            <th>Stocked</th>
+            <th>Mortality</th>
             <th>Balance</th>
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let cage of stockBalanceList">
-            <td>{{ cage.cageId }}</td>
-            <td>{{ getCageNameById(cage.cageId) }}</td>
-            <td>{{ cage.balance }}</td>
-          </tr>
-          <tr *ngIf="stockedFishSummary.length === 0">
-            <td colspan="4" class="text-muted text-center">No data available for this date.</td>
+          <tr *ngFor="let cage of cages">
+  <td>{{ cage.id }}</td>
+  <td>{{ cage.name }}</td>
+  <td>{{ getStockedByCageId(cage.id) }}</td>
+  <td>{{ getMortalityByCageId(cage.id) }}</td>
+  <td>{{ getBalanceByCageId(cage.id) }}</td>
+</tr>
+
+
+          <tr *ngIf="stockBalanceList.length === 0">
+            <td colspan="5" class="text-muted text-center">No data available for this date.</td>
           </tr>
         </tbody>
       </table>
-        <div class="d-flex align-items-center justify-content-between" style="max-width: 540px; margin: 0 auto;">
-          <button type="button" class="btn btn-primary" (click)="goToBackPage()">
-            Back
-          </button>
-          <button type="button" class="btn btn-warning" (click)="clearTableEntries()">
-            Clear Table
-          </button>
-          <button class="btn btn-success" (click)="openPage()">
-          View Chart 
-          </button>
-        </div>
+
+      <div class="d-flex align-items-center justify-content-between" style="max-width: 540px; margin: 0 auto;">
+        <button type="button" class="btn btn-primary" (click)="goToBackPage()">Back</button>
+        <button type="button" class="btn btn-warning" (click)="clearTableEntries()">Clear Table</button>
+        <button class="btn btn-success" (click)="openPage()">View Chart</button>
+      </div>
     </div>
   </div>
 </div>

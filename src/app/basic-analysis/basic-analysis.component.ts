@@ -43,12 +43,12 @@ ngOnInit() {
   ]).subscribe(([stockingData, mortalityData]) => {
     this.lineChartData = [
       {
-        ...this.lineChartData[1],  // keep your first dataset config if any
+        ...this.lineChartData[1],  
         data: [...stockingData],
         label: 'Stocking',
       },
       {
-        ...this.lineChartData[0],  // keep your second dataset config if any
+        ...this.lineChartData[0],  
         data: [...mortalityData],
         label: 'Mortality',
       }

@@ -1,18 +1,13 @@
 import { Component, OnInit } from '@angular/core';
 import { CageService } from '../Service/cage.service';
 import { StockService } from '../Service/stock.service';
-import { Fish } from '../models/fish.model';
+import { EditableStocking, Stocking } from '../models/stocking.model';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { BasicAnalysisService } from '../Service/basic-analysis.service';
 import { Router } from '@angular/router';
+// import { FishTransferService } from '../Service/fish-transfer.service';
 
-interface CageFishEntry {
-  cageId: number;
-  cageName: string;
-  species: string;
-  qty: number | null;
-}
 
 @Component({
   selector: 'app-fish-stocking',
@@ -22,12 +17,12 @@ interface CageFishEntry {
 })
 export class FishStockingComponent implements OnInit {
   cages: any[] = [];
-  cagesWithStock: CageFishEntry[] = [];
+  cagesWithStock: EditableStocking[] = [];
   modalVisible = false;
   stockingDate: string = this.getToday();
 
   showStockingSummary = false;
-  stockedFishSummary: Fish[] = [];
+  stockedFishSummary: Stocking[] = [];
 
 
 
@@ -35,7 +30,7 @@ export class FishStockingComponent implements OnInit {
 
   cageIdNameMap: { [key: number]: string } = {};
 
-  editingCage: CageFishEntry | null = null;
+  editingCage: EditableStocking | null = null;
 
 
 
@@ -43,6 +38,7 @@ export class FishStockingComponent implements OnInit {
     private cageService: CageService,
     private stockService: StockService,
     private basicAnalysisService: BasicAnalysisService,
+    // private fishTransferService: FishTransferService,
     private router: Router
   ) {}
 
@@ -55,8 +51,13 @@ export class FishStockingComponent implements OnInit {
       cages.forEach(c => this.cageIdNameMap[c.id] = c.name);
       this.loadCagesWithStock();
       this.loadSummaryForDate(this.stockingDate);
-      this.updateMonthlyStockingData();  // also update on init
+      this.updateMonthlyStockingData();
     });
+//     this.fishTransferService.transfersUpdated$.subscribe(() => {
+//   this.loadSummaryForDate(this.stockingDate);
+//   this.updateMonthlyStockingData();
+// });
+
   }
 
   getToday(): string {
@@ -115,7 +116,9 @@ export class FishStockingComponent implements OnInit {
               cageId: this.editingCage!.cageId,
               species: this.editingCage!.species,
               qty: this.editingCage!.qty!,
-              date: new Date(this.stockingDate)
+              date:this.stockingDate,
+              stockedQty: this.editingCage!.qty!,
+              fishCount: this.editingCage!.qty!
             }
           : entry
       );
@@ -132,11 +135,13 @@ export class FishStockingComponent implements OnInit {
         return;
       }
 
-      const fishToAdd: Fish[] = validEntries.map(entry => ({
+      const fishToAdd: Stocking[] = validEntries.map(entry => ({
         cageId: entry.cageId,
         species: entry.species,
         qty: entry.qty!,
-        date: new Date(this.stockingDate)
+        date:this.stockingDate,
+        stockedQty: entry.qty!, // You may adjust this logic
+  fishCount: entry.qty!
       }));
 
       allData[this.stockingDate] = fishToAdd;
@@ -150,7 +155,7 @@ export class FishStockingComponent implements OnInit {
     this.closeModal();
   }
 
-  openEditModal(fish: Fish) {
+  openEditModal(fish: Stocking) {
     this.editingCage = {
       cageId: fish.cageId,
       cageName: this.getCageNameById(fish.cageId),
@@ -163,11 +168,13 @@ export class FishStockingComponent implements OnInit {
   clearTableEntries() {
     const allData = this.getAllStockingData();
 
-    const clearedFish: Fish[] = Object.keys(this.cageIdNameMap).map(id => ({
+    const clearedFish: Stocking[] = Object.keys(this.cageIdNameMap).map(id => ({
       cageId: +id,
       species: '',
       qty: 0,
-      date: new Date(this.stockingDate)
+      date:this.stockingDate,
+      stockedQty: 0,
+      fishCount: 0
     }));
 
     allData[this.stockingDate] = clearedFish;
@@ -178,7 +185,7 @@ export class FishStockingComponent implements OnInit {
     this.updateMonthlyStockingData(); // <-- update monthly data on clear
   }
 
-  getAllStockingData(): { [date: string]: Fish[] } {
+  getAllStockingData(): { [date: string]: Stocking[] } {
     return JSON.parse(localStorage.getItem('stockingDataByDate') || '{}');
   }
 
@@ -186,28 +193,18 @@ export class FishStockingComponent implements OnInit {
     return this.cageIdNameMap[cageId] || 'Unknown';
   }
 
-  saveToLocalStorage(date: string, fishList: Fish[]) {
+  saveToLocalStorage(date: string, fishList: Stocking[]) {
     const allData = this.getAllStockingData();
     allData[date] = fishList;
     localStorage.setItem('stockingDataByDate', JSON.stringify(allData));
   }
 
   loadSummaryForDate(date: string) {
-    const allData = this.getAllStockingData();
-    const stockedFish = allData[date] || [];
+   const allData = this.getAllStockingData(); 
+  this.stockedFishSummary = allData[date] || []
+  this.showStockingSummary = true;
+}
 
-    this.stockedFishSummary = this.cages.map(cage => {
-      const match = stockedFish.find(f => f.cageId === cage.id);
-      return {
-        cageId: cage.id,
-        species: match ? match.species : '',
-        qty: match ? match.qty : 0,
-        date: new Date(date)
-      };
-    });
-
-    this.showStockingSummary = true;
-  }
 
   // NEW: Aggregates monthly stocking qty and pushes to AnalysisDataService
   updateMonthlyStockingData() {

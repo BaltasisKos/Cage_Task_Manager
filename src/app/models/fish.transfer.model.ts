@@ -1,7 +1,7 @@
 interface FishTransfer {
-  fromCageId: number;
-  toCageId: number;
+  fromCageId?: number;
+  toCageId?: number;
   species: string;
-  qty: number;
-  date: Date;
+  qty?: number;
+  date: string;
 }

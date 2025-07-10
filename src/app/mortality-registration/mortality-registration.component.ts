@@ -1,15 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 import { CageService } from '../Service/cage.service';
-import { MortalityService, MortalityEntry } from '../Service/mortality.service';
+import { MortalityService } from '../Service/mortality.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-
-interface CageFishEntry {
-  cageId: number;
-  cageName: string;
-  mortality?: number | null;
-}
+import { MortalityEntry } from '../models/mortality.model';
 
 @Component({
   selector: 'app-mortality-registration',
@@ -19,12 +14,11 @@ interface CageFishEntry {
 })
 export class MortalityRegistrationComponent implements OnInit {
   cages: any[] = [];
-  cagesWithMortality: CageFishEntry[] = [];
+  cagesWithMortality: MortalityEntry[] = [];
   modalVisible = false;
-  stockingDate: string = this.getToday();
-
+  mortalityDate: string = this.getToday();
   cageIdNameMap: { [key: number]: string } = {};
-  editingCage: CageFishEntry | null = null;
+  editingCage: MortalityEntry | null = null;
 
   constructor(
     private cageService: CageService,
@@ -50,14 +44,20 @@ export class MortalityRegistrationComponent implements OnInit {
   }
 
   loadCagesWithMortality() {
-    const mortalityEntries = this.mortalityService.getMortalityByDate(new Date(this.stockingDate));
-    this.cagesWithMortality = this.cages.map(cage => {
-      const entry = mortalityEntries.find(m => m.cageId === cage.id);
-      return {
-        cageId: cage.id,
-        cageName: cage.name,
-        mortality: entry ? entry.mortality : null
-      };
+    this.mortalityService.getMortalityByDate(new Date(this.mortalityDate)).then(entries => {
+      // Map cages with existing mortality or create new defaults
+      this.cagesWithMortality = this.cages.map(cage => {
+        const match = entries.find(e => e.cageId === cage.id);
+        return match ? { ...match } : {
+          cageId: cage.id,
+          cageName: cage.name,
+          mortality: 0,
+          date: this.mortalityDate,
+          species: '',
+          stockedQty: 0,
+          entries: 0
+        };
+      });
     });
   }
 
@@ -82,29 +82,21 @@ export class MortalityRegistrationComponent implements OnInit {
     });
   }
 
-  saveMortality() {
-    const mortalityEntries: MortalityEntry[] = this.cagesWithMortality
-      .filter(c => c.mortality != null && c.mortality > 0)
-      .map(c => ({
-        cageId: c.cageId,
-        cageName: this.getCageNameById(c.cageId),
-        species: '', // Species removed, can leave empty or remove field from model
-        stockedQty: 0,
-        mortality: c.mortality ?? 0,
-        date: this.stockingDate
-      }));
+  async saveMortality() {
+    const validEntries = this.cagesWithMortality.filter(c => c.mortality != null && c.mortality > 0);
 
-    this.mortalityService.saveMortality(new Date(this.stockingDate), mortalityEntries);
+    if (validEntries.length === 0) {
+      alert('Please enter at least one mortality entry.');
+      return;
+    }
+
+    await this.mortalityService.saveMortality(new Date(this.mortalityDate), validEntries);
     this.loadCagesWithMortality();
     this.closeModal();
   }
 
-  openEditModal(entry: CageFishEntry) {
-    this.editingCage = {
-      cageId: entry.cageId,
-      cageName: entry.cageName,
-      mortality: entry.mortality ?? 0
-    };
+  openEditModal(entry: MortalityEntry) {
+    this.editingCage = { ...entry };
     this.modalVisible = true;
   }
 
@@ -112,55 +104,34 @@ export class MortalityRegistrationComponent implements OnInit {
     return this.cageIdNameMap[cageId] || 'Unknown';
   }
 
-  hasMortalityRecorded(): boolean {
-    const mortalityEntries = this.mortalityService.getMortalityByDate(new Date(this.stockingDate));
-    return mortalityEntries.some(entry => entry.mortality != null && entry.mortality > 0);
+  async hasMortalityRecorded(): Promise<boolean> {
+    const entries = await this.mortalityService.getMortalityByDate(new Date(this.mortalityDate));
+    return entries.some(entry => entry.mortality && entry.mortality > 0);
   }
 
   goToBackPage() {
     this.router.navigate(['/fish-stocking']);
   }
 
-  goToNextPage() {
-    if (this.hasMortalityRecorded()) {
+  async goToNextPage() {
+    if (await this.hasMortalityRecorded()) {
       this.router.navigate(['/stock-balance-view']);
     }
   }
 
-  clearTableEntries() {
-  // Get all records from localStorage through service logic (we can create a method in service)
-  const allRecords: { date: string; entries: MortalityEntry[] }[] = JSON.parse(localStorage.getItem('mortalityRecords') || '[]');
+  async clearTableEntries() {
+    const clearedEntries: MortalityEntry[] = this.cages.map(cage => ({
+      cageId: cage.id,
+      cageName: cage.name,
+      mortality: 0,
+      date: this.mortalityDate,
+      species: '',
+      stockedQty: 0,
+      entries: 0
+    }));
 
-  const targetDate = this.stockingDate;
-
-  // Prepare cleared entries for all cages with mortality = 0
-  const clearedEntries: MortalityEntry[] = this.cages.map(cage => ({
-    cageId: cage.id,
-    cageName: cage.name,
-    mortality: 0,
-    date: targetDate,
-    species: '',      // optional or empty if unused
-    stockedQty: 0     // optional or 0 if unused
-  }));
-
-  // Remove existing record for this date if any
-  const filteredRecords = allRecords.filter(record => record.date !== targetDate);
-
-  // Add the cleared entries record for this date
-  filteredRecords.push({ date: targetDate, entries: clearedEntries });
-
-  // Save back to localStorage
-  localStorage.setItem('mortalityRecords', JSON.stringify(filteredRecords));
-
-  // Update the service subject by reloading data
-  this.mortalityService.saveMortality(new Date(targetDate), clearedEntries);
-
-  // Update local state
-  this.cagesWithMortality = clearedEntries;
-
-  // Close modal if open
-  this.modalVisible = false;
-}
-
-
+    await this.mortalityService.saveMortality(new Date(this.mortalityDate), clearedEntries);
+    this.loadCagesWithMortality();
+    this.modalVisible = false;
+  }
 }

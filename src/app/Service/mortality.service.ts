@@ -1,23 +1,9 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
-
-export interface MortalityEntry {
-  cageId: number;
-  cageName: string;
-  species?: string;
-  stockedQty?: number;
-  mortality: number;
-  date: string;
-}
-
-interface MortalityRecord {
-  date: string;
-  entries: MortalityEntry[];
-}
+import { Mortality, MortalityEntry } from '../models/mortality.model';
 
 @Injectable({ providedIn: 'root' })
 export class MortalityService {
-
   private storageKey = 'mortalityRecords';
 
   private mortalityDataSubject = new BehaviorSubject<number[]>(new Array(12).fill(0));
@@ -27,30 +13,36 @@ export class MortalityService {
     this.loadAndEmitMonthlyMortality();
   }
 
-  getMortalityByDate(date: Date): MortalityEntry[] {
-    const allRecords: MortalityRecord[] = JSON.parse(localStorage.getItem(this.storageKey) || '[]');
-    const targetDate = date.toISOString().slice(0, 10);
-    const record = allRecords.find(r => r.date === targetDate);
-    return record ? record.entries : [];
+  // Return a Promise to support async/await usage
+  getMortalityByDate(date: Date): Promise<MortalityEntry[]> {
+    return new Promise(resolve => {
+      const allRecords: Mortality[] = JSON.parse(localStorage.getItem(this.storageKey) || '[]');
+      const targetDate = date.toISOString().slice(0, 10);
+      const record = allRecords.find(r => r.date === targetDate);
+      resolve(record ? record.entries : []);
+    });
   }
 
-  saveMortality(date: Date, entries: MortalityEntry[]): void {
-    const allRecords: MortalityRecord[] = JSON.parse(localStorage.getItem(this.storageKey) || '[]');
-    const targetDate = date.toISOString().slice(0, 10);
+  // Return Promise<void> so caller can await saving completion
+  saveMortality(date: Date, entries: MortalityEntry[]): Promise<void> {
+    return new Promise(resolve => {
+      const allRecords: Mortality[] = JSON.parse(localStorage.getItem(this.storageKey) || '[]');
+      const targetDate = date.toISOString().slice(0, 10);
 
-    // Remove old record for date if exists
-    const filtered = allRecords.filter(r => r.date !== targetDate);
+      // Remove old record for date if exists
+      const filtered = allRecords.filter(r => r.date !== targetDate);
 
-    // Add updated record
-    filtered.push({ date: targetDate, entries });
+      // Add updated record
+      filtered.push({ date: targetDate, entries });
 
-    localStorage.setItem(this.storageKey, JSON.stringify(filtered));
-
-    this.loadAndEmitMonthlyMortality();
+      localStorage.setItem(this.storageKey, JSON.stringify(filtered));
+      this.loadAndEmitMonthlyMortality();
+      resolve();
+    });
   }
 
   private loadAndEmitMonthlyMortality() {
-    const allRecords: MortalityRecord[] = JSON.parse(localStorage.getItem(this.storageKey) || '[]');
+    const allRecords: Mortality[] = JSON.parse(localStorage.getItem(this.storageKey) || '[]');
     const monthlyTotals = new Array(12).fill(0);
 
     allRecords.forEach(record => {
